@@ -67,8 +67,8 @@ syn match VarId "\(\<[A-Z][a-zA-Z0-9_']*\.\)\=\<[a-z][a-zA-Z0-9_']*\>"
 " others are variables (e.g. functions).
 syn match hsVarSym "\(\<[A-Z][a-zA-Z0-9_']*\.\)\=[-!#$%&\*\+/<=>\?@\\^|~.][-!#$%&\*\+/<=>\?@\\^|~:.]*"
 syn match hsConSym "\(\<[A-Z][a-zA-Z0-9_']*\.\)\=:[-!#$%&\*\+./<=>\?@\\^|~:]*"
-syn match hsVarSym "`\(\<[A-Z][a-zA-Z0-9_']*\.\)\=[a-z][a-zA-Z0-9_']*`"
-syn match hsConSym "`\(\<[A-Z][a-zA-Z0-9_']*\.\)\=[A-Z][a-zA-Z0-9_']*`"
+syn match hsVarInfixSym "`\(\<[A-Z][a-zA-Z0-9_']*\.\)\=[a-z][a-zA-Z0-9_']*`"
+syn match hsConInfixSym "`\(\<[A-Z][a-zA-Z0-9_']*\.\)\=[A-Z][a-zA-Z0-9_']*`"
 
 " Toplevel Template Haskell support
 "sy match hsTHTopLevel "^[a-z]\(\(.\&[^=]\)\|\(\n[^a-zA-Z0-9]\)\)*"
@@ -177,11 +177,11 @@ syn match hsModuleStart "^module\(\s\|\n\)*\(\<\(\w\|\.\)*\>\)\(\s\|\n\)*"
   \ nextgroup=hsModuleCommentA,hsModuleExports,hsModuleWhereLabel
 
 syn region hsModuleCommentA start="{-" end="-}"
-  \ contains=hsModuleCommentA,hsCommentTodo,@Spell contained
+  \ contains=hsModuleCommentA,hsCommentTodo,hsCommentFixme,@Spell contained
   \ nextgroup=hsModuleCommentA,hsModuleExports,hsModuleWhereLabel skipwhite skipnl
 
 syn match hsModuleCommentA "--.*\n"
-  \ contains=hsCommentTodo,@Spell contained
+  \ contains=hsCommentTodo,hsCommentFixme,@Spell contained
   \ nextgroup=hsModuleCommentA,hsModuleExports,hsModuleWhereLabel skipwhite skipnl
 
 syn region hsModuleExports start="(" end=")" contained
@@ -189,11 +189,11 @@ syn region hsModuleExports start="(" end=")" contained
    \ contains=hsBlockComment,hsLineComment,hsType,hsDelimTypeExport,hs_hlFunctionName,hs_OpFunctionName,hsExportModule
 
 syn match hsModuleCommentB "--.*\n"
-  \ contains=hsCommentTodo,@Spell contained
+  \ contains=hsCommentTodo,hsCommentFixme,@Spell contained
   \ nextgroup=hsModuleCommentB,hsModuleWhereLabel skipwhite skipnl
 
 syn region hsModuleCommentB start="{-" end="-}"
-   \ contains=hsModuleCommentB,hsCommentTodo,@Spell contained
+   \ contains=hsModuleCommentB,hsCommentTodo,hsCommentFixme,@Spell contained
    \ nextgroup=hsModuleCommentB,hsModuleWhereLabel skipwhite skipnl
 " end module highlighting
 
@@ -213,18 +213,19 @@ sy match   hsNumber		"\<[0-9]\+\>\|\<0[xX][0-9a-fA-F]\+\>\|\<0[oO][0-7]\+\>"
 sy match   hsFloat		"\<[0-9]\+\.[0-9]\+\([eE][-+]\=[0-9]\+\)\=\>"
 
 " Comments
-sy keyword hsCommentTodo    TODO FIXME XXX TBD contained
-sy match   hsLineComment      "---*\([^-!#$%&\*\+./<=>\?@\\^|~].*\)\?$" contains=hsCommentTodo,@Spell
-sy region  hsBlockComment     start="{-"  end="-}" contains=hsBlockComment,hsCommentTodo,@Spell
+sy keyword hsCommentTodo    TODO TODO: TBD TBD: contained
+sy keyword hsCommentFixme    FIXME FIXME: XXX XXX: DEBUG DEBUG: contained
+sy match   hsLineComment      "---*\([^-!#$%&\*\+./<=>\?@\\^|~].*\)\?$" contains=hsCommentTodo,hsCommentFixme,@Spell
+sy region  hsBlockComment     start="{-"  end="-}" contains=hsBlockComment,hsCommentTodo,hsCommentFixme,@Spell
 sy region  hsPragma	       start="{-#" end="#-}"
 
 " QuasiQuotation
 sy region hsQQ start="\[\$" end="|\]"me=e-2 keepend contains=hsQQVarID,hsQQContent nextgroup=hsQQEnd
-sy region hsQQNew start="\[\(.\&[^|]\&\S\)*|" end="|\]"me=e-2 keepend contains=hsQQVarIDNew,hsQQContent nextgroup=hsQQEnd
+sy region hsQQNew start="\[\(.\&[^|"]\&\S\)*|" end="|\]"me=e-2 keepend contains=hsQQVarIDNew,hsQQContent nextgroup=hsQQEnd
 sy match hsQQContent ".*" contained
 sy match hsQQEnd "|\]" contained
-sy match hsQQVarID "\[\$\(.\&[^|]\)*|" contained
-sy match hsQQVarIDNew "\[\(.\&[^|]\)*|" contained
+sy match hsQQVarID "\[\$\(.\&[^|"]\)*|" contained
+sy match hsQQVarIDNew "\[\(.\&[^|"]\)*|" contained
 
 if exists("hs_highlight_debug")
   " Debugging functions from the standard prelude.
@@ -268,17 +269,19 @@ if version >= 508 || !exists("did_hs_syntax_inits")
   HiLink hs_HighliteInfixFunctionName Function
   HiLink hs_HlInfixOp       Function
   HiLink hs_OpFunctionName  Function
-  HiLink hsTypedef          Typedef
+  HiLink hsTypedef          Keyword
   HiLink hsVarSym           hsOperator
+  HiLink hsVarInfixSym      hsOperator
   HiLink hsConSym           hsOperator
+  HiLink hsConInfixSym      Function
   if exists("hs_highlight_delimiters")
     " Some people find this highlighting distracting.
 	HiLink hsDelimiter        Delimiter
   endif
 
-  HiLink hsModuleStartLabel Structure
+  HiLink hsModuleStartLabel Keyword
   HiLink hsExportModuleLabel Keyword
-  HiLink hsModuleWhereLabel Structure
+  HiLink hsModuleWhereLabel Keyword
   HiLink hsModuleName       Normal
   
   HiLink hsImportIllegal    Error
@@ -291,7 +294,7 @@ if version >= 508 || !exists("did_hs_syntax_inits")
   HiLink hsOperator         Operator
 
   HiLink hsInfix            Keyword
-  HiLink hsStructure        Structure
+  HiLink hsStructure        Keyword
   HiLink hsStatement        Statement
   HiLink hsConditional      Conditional
 
@@ -310,6 +313,7 @@ if version >= 508 || !exists("did_hs_syntax_inits")
   HiLink hsModuleCommentB   hsComment
   HiLink hsComment          Comment
   HiLink hsCommentTodo      Todo
+  HiLink hsCommentFixme     Error
   HiLink hsPragma           SpecialComment
   HiLink hsBoolean			  Boolean
 
@@ -336,7 +340,7 @@ if version >= 508 || !exists("did_hs_syntax_inits")
   HiLink cCppOut            Comment
 
   HiLink hsFFIForeign       Keyword
-  HiLink hsFFIImportExport  Structure
+  HiLink hsFFIImportExport  Keyword
   HiLink hsFFICallConvention Keyword
   HiLink hsFFISafety         Keyword
 
